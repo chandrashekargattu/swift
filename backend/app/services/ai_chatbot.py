@@ -64,7 +64,7 @@ except ImportError as e:
 
 # Additional utilities
 from app.core.config import settings
-from app.core.database import Database
+from app.core.database import db
 
 # Import lightweight version as fallback
 from app.services.ai_chatbot_lite import LightweightAIChatbotService, AIProvider
@@ -73,7 +73,7 @@ from app.services.ai_chatbot_lite import LightweightAIChatbotService, AIProvider
 if AI_DEPS_AVAILABLE:
     class AdvancedAIChatbotService:
         def __init__(self):
-            self.db = Database()
+            self.db = db
             
             # Initialize NLP models
             self._init_nlp_models()
@@ -96,12 +96,12 @@ if AI_DEPS_AVAILABLE:
         def _init_nlp_models(self):
             """Initialize NLP models for advanced understanding"""
             try:
-            # SpaCy for entity recognition
-            self.nlp = spacy.load("en_core_web_sm")
-        except:
-            logger.warning("SpaCy model not found, downloading...")
-            os.system("python -m spacy download en_core_web_sm")
-            self.nlp = spacy.load("en_core_web_sm")
+                # SpaCy for entity recognition
+                self.nlp = spacy.load("en_core_web_sm")
+            except:
+                logger.warning("SpaCy model not found, downloading...")
+                os.system("python -m spacy download en_core_web_sm")
+                self.nlp = spacy.load("en_core_web_sm")
         
         # Sentiment Analysis
         self.sentiment_analyzer = pipeline(

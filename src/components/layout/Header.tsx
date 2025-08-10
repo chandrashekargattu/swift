@@ -62,6 +62,9 @@ export default function Header() {
             <Link href="/fleet" className={`transition-colors ${isActive('/fleet') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
               Our Fleet
             </Link>
+            <Link href="/carpool" className={`transition-colors ${isActive('/carpool') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
+              Carpool
+            </Link>
             <Link href="/pricing" className={`transition-colors ${isActive('/pricing') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
               Pricing
             </Link>
@@ -164,6 +167,9 @@ export default function Header() {
               </Link>
               <Link href="/fleet" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/fleet') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
                 Our Fleet
+              </Link>
+              <Link href="/carpool" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/carpool') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
+                Carpool
               </Link>
               <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/pricing') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
                 Pricing

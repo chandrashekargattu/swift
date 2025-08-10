@@ -97,7 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await authService.getCurrentUser();
       setUser(userData);
       updateLastActivity();
-      router.push('/');
+      // Don't redirect here - let the signin page handle redirect
+      // router.push('/');
     } catch (error) {
       throw error;
     }
@@ -121,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = () => {
     authService.signOut();
     setUser(null);
-    router.push('/');
+    // Don't redirect here - let components handle their own redirects
   };
 
   return (

@@ -24,9 +24,15 @@ export default function SignIn() {
   // Redirect if already signed in
   useEffect(() => {
     if (user) {
-      router.push('/');
+      // Check if there's a pending booking
+      const pendingBooking = sessionStorage.getItem('pendingBooking');
+      if (pendingBooking) {
+        router.push('/');
+      } else {
+        router.push('/');
+      }
     }
-  }, [user, router]);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

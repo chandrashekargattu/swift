@@ -150,10 +150,10 @@ app.add_middleware(LoggingMiddleware, logger=logger)
 # Rate Limiting Middleware
 app.add_middleware(
     RateLimitMiddleware,
-    requests_per_minute=60,
-    requests_per_hour=3600,
-    burst_size=10,
-    exclude_paths=["/health", "/metrics", "/docs", "/redoc", "/openapi.json"]
+    requests_per_minute=300,  # Increased for development
+    requests_per_hour=10000,  # Increased for development
+    burst_size=50,  # Increased for development
+    exclude_paths=["/health", "/metrics", "/docs", "/redoc", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/register"]
 )
 
 # CORS Middleware
