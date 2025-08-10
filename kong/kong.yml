@@ -1,0 +1,231 @@
+_format_version: "3.0"
+
+services:
+  # RideSwift API v1
+  - name: rideswift-api-v1
+    url: http://host.docker.internal:8000
+    routes:
+      - name: api-v1-route
+        paths:
+          - /api/v1
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+    plugins:
+      # Rate limiting
+      - name: rate-limiting
+        config:
+          minute: 60
+          hour: 3600
+          policy: local
+          fault_tolerant: true
+          hide_client_headers: false
+      
+      # CORS
+      - name: cors
+        config:
+          origins:
+            - http://localhost:3000
+            - http://localhost:3001
+            - https://rideswift.com
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - PATCH
+            - OPTIONS
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+          exposed_headers:
+            - X-Request-ID
+            - X-RateLimit-Limit-Minute
+            - X-RateLimit-Remaining-Minute
+          credentials: true
+          max_age: 3600
+      
+      # Request size limiting
+      - name: request-size-limiting
+        config:
+          allowed_payload_size: 10  # 10MB
+          size_unit: megabytes
+      
+      # Request termination for specific paths
+      - name: request-termination
+        config:
+          status_code: 503
+          message: "Service temporarily unavailable"
+        enabled: false
+      
+      # Request transformer
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - X-API-Version:v1
+              - X-Gateway:Kong
+      
+      # Response transformer
+      - name: response-transformer
+        config:
+          add:
+            headers:
+              - X-Kong-Upstream-Latency:$(upstream_latency)
+              - X-Kong-Proxy-Latency:$(kong_latency)
+          remove:
+            headers:
+              - Server
+              - X-Powered-By
+
+  # RideSwift API v2 (future)
+  - name: rideswift-api-v2
+    url: http://host.docker.internal:8000
+    routes:
+      - name: api-v2-route
+        paths:
+          - /api/v2
+        strip_path: false
+    plugins:
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - X-API-Version:v2
+      - name: request-termination
+        config:
+          status_code: 501
+          message: "API v2 is not yet implemented"
+
+  # Health check endpoint
+  - name: health-check
+    url: http://host.docker.internal:8000/health
+    routes:
+      - name: health-route
+        paths:
+          - /health
+        strip_path: false
+    plugins:
+      # No rate limiting for health checks
+      - name: rate-limiting
+        config:
+          minute: 1000
+          hour: 10000
+
+  # Static assets (if serving from backend)
+  - name: static-assets
+    url: http://host.docker.internal:3000
+    routes:
+      - name: static-route
+        paths:
+          - /static
+        strip_path: false
+    plugins:
+      # Cache static assets
+      - name: proxy-cache
+        config:
+          response_code:
+            - 200
+            - 301
+            - 404
+          request_method:
+            - GET
+            - HEAD
+          content_type:
+            - "text/css"
+            - "text/javascript"
+            - "application/javascript"
+            - "image/jpeg"
+            - "image/png"
+            - "image/gif"
+            - "image/svg+xml"
+          cache_ttl: 3600
+          strategy: memory
+
+# Global plugins
+plugins:
+  # API key authentication (optional)
+  - name: key-auth
+    enabled: false
+    config:
+      key_names:
+        - X-API-Key
+        - apikey
+      key_in_body: false
+      hide_credentials: true
+  
+  # OAuth 2.0 (optional)
+  - name: oauth2
+    enabled: false
+    config:
+      scopes:
+        - read
+        - write
+        - admin
+      mandatory_scope: true
+      enable_authorization_code: true
+      enable_client_credentials: false
+      enable_implicit_grant: false
+      enable_password_grant: true
+  
+  # IP restriction (optional)
+  - name: ip-restriction
+    enabled: false
+    config:
+      allow:
+        - 192.168.1.0/24
+        - 10.0.0.0/8
+  
+  # Bot detection
+  - name: bot-detection
+    config:
+      allow:
+        - "(Uptime-Kuma)"  # Allow monitoring bots
+      deny:
+        - "(Googlebot)"
+        - "(bingbot)"
+  
+  # Correlation ID
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+      echo_downstream: true
+
+# Upstreams for load balancing
+upstreams:
+  - name: rideswift-backend
+    targets:
+      - target: host.docker.internal:8000
+        weight: 100
+    healthchecks:
+      active:
+        healthy:
+          interval: 10
+          successes: 3
+        unhealthy:
+          interval: 5
+          tcp_failures: 3
+          timeouts: 3
+          http_failures: 3
+        http_path: /health
+        timeout: 2
+        type: http
+      passive:
+        healthy:
+          successes: 5
+        unhealthy:
+          tcp_failures: 2
+          timeouts: 2
+          http_failures: 5

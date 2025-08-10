@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth Status</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <div id="status"></div>
+    <button onclick="testAuth()">Test Authentication</button>
+    <button onclick="clearAuth()">Clear Auth</button>
+    
+    <script>
+        function testAuth() {
+            const token = localStorage.getItem('access_token');
+            const user = localStorage.getItem('user');
+            
+            document.getElementById('status').innerHTML = `
+                <h3>Current Auth Status:</h3>
+                <p><strong>Token:</strong> ${token ? 'Present' : 'Not found'}</p>
+                <p><strong>Token Value:</strong> ${token ? token.substring(0, 50) + '...' : 'N/A'}</p>
+                <p><strong>User:</strong> ${user ? 'Present' : 'Not found'}</p>
+                <p><strong>User Data:</strong> <pre>${user ? JSON.stringify(JSON.parse(user), null, 2) : 'N/A'}</pre></p>
+            `;
+            
+            if (token) {
+                // Test the token
+                fetch('http://localhost:8000/api/v1/users/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('status').innerHTML += `
+                        <h3>Token Validation:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                })
+                .catch(err => {
+                    document.getElementById('status').innerHTML += `
+                        <h3>Token Validation Error:</h3>
+                        <p style="color: red;">${err.message}</p>
+                    `;
+                });
+            }
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            alert('Authentication cleared! Please refresh the page and sign in again.');
+        }
+        
+        // Auto-test on load
+        window.onload = testAuth;
+    </script>
+</body>
+</html>

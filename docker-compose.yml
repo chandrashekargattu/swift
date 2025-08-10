@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: rideswift-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: rideswift123
+      MONGO_INITDB_DATABASE: rideswift_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - rideswift-network
+
+  backend:
+    build: ./backend
+    container_name: rideswift-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_URL: mongodb://admin:rideswift123@mongodb:27017/rideswift_db?authSource=admin
+      DATABASE_NAME: rideswift_db
+      SECRET_KEY: your-super-secret-key-change-in-production
+    depends_on:
+      - mongodb
+    networks:
+      - rideswift-network
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: .
+    container_name: rideswift-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - rideswift-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rideswift-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - rideswift-network
+
+networks:
+  rideswift-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
