@@ -408,6 +408,7 @@ class TestCitiesAPI:
             assert response.status_code == 200
             data = response.json()
             assert len(data["cities"]) == 1000
+    
 
     @pytest.mark.asyncio
     async def test_unicode_city_names(self, client):
