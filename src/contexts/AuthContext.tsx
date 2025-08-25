@@ -85,7 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Session check failed:', error);
-      authService.removeToken();
+      // Only remove token if it's an authentication error
+      if (error instanceof Error && error.message.includes('unauthorized')) {
+        authService.removeToken();
+      }
     } finally {
       setIsLoading(false);
     }

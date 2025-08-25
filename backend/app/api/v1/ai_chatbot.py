@@ -7,12 +7,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import json
 import asyncio
+import logging
+from datetime import datetime
 
 from app.api.deps import get_current_user
 from app.models.user import UserModel
 from app.services.ai_chatbot import ai_chatbot_service, AIProvider
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
@@ -58,6 +61,34 @@ class FeedbackRequest(BaseModel):
 class KnowledgeSearchRequest(BaseModel):
     query: str
     limit: Optional[int] = 5
+
+@router.post("/chat/public", response_model=ChatResponse)
+async def public_chat(request: ChatMessage):
+    """
+    Public AI chat endpoint for unauthenticated users
+    """
+    try:
+        # Generate session ID if not provided
+        session_id = request.session_id or f"anon_{datetime.now().timestamp()}"
+        
+        # Process message with basic service
+        result = await ai_chatbot_service.generate_response(
+            message=request.message,
+            user_id="anonymous",
+            session_id=session_id
+        )
+        
+        return ChatResponse(
+            response=result.get("response", "I'm sorry, I couldn't process that message."),
+            session_id=session_id,
+            metadata=result.get("metadata", {})
+        )
+    except Exception as e:
+        logger.error(f"Public chat error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process chat message"
+        )
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
@@ -213,30 +244,39 @@ async def get_available_providers():
     """
     providers = []
     
-    if ai_chatbot_service.llm_providers.get(AIProvider.OPENAI):
-        providers.append({
-            "id": "openai",
-            "name": "OpenAI GPT-4",
-            "description": "Most advanced, best for complex queries"
-        })
+    # Check if we're using the full AI service with LLM providers
+    if hasattr(ai_chatbot_service, 'llm_providers'):
+        if ai_chatbot_service.llm_providers.get(AIProvider.OPENAI):
+            providers.append({
+                "id": "openai",
+                "name": "OpenAI GPT-4",
+                "description": "Most advanced, best for complex queries"
+            })
+        
+        if ai_chatbot_service.llm_providers.get(AIProvider.ANTHROPIC):
+            providers.append({
+                "id": "anthropic",
+                "name": "Claude 3",
+                "description": "Excellent for detailed, thoughtful responses"
+            })
+        
+        if ai_chatbot_service.llm_providers.get(AIProvider.GOOGLE):
+            providers.append({
+                "id": "google",
+                "name": "Google Gemini",
+                "description": "Fast and efficient for general queries"
+            })
     
-    if ai_chatbot_service.llm_providers.get(AIProvider.ANTHROPIC):
-        providers.append({
-            "id": "anthropic",
-            "name": "Claude 3",
-            "description": "Excellent for detailed, thoughtful responses"
-        })
-    
-    if ai_chatbot_service.llm_providers.get(AIProvider.GOOGLE):
-        providers.append({
-            "id": "google",
-            "name": "Google Gemini",
-            "description": "Fast and efficient for general queries"
-        })
+    # Always include basic provider as fallback
+    providers.append({
+        "id": "basic",
+        "name": "Basic Assistant",
+        "description": "Simple rule-based responses (no AI)"
+    })
     
     return {
         "providers": providers,
-        "default": "openai" if providers else None
+        "default": "openai" if len(providers) > 1 else "basic"
     }
 
 @router.get("/health")
@@ -244,18 +284,34 @@ async def health_check():
     """
     Check AI service health
     """
-    return {
+    nlp_status = {}
+    vector_status = {}
+    
+    # Check attributes only if they exist
+    if hasattr(ai_chatbot_service, 'nlp'):
+        nlp_status["spacy"] = bool(ai_chatbot_service.nlp)
+    if hasattr(ai_chatbot_service, 'sentiment_analyzer'):
+        nlp_status["sentiment"] = bool(ai_chatbot_service.sentiment_analyzer)
+    if hasattr(ai_chatbot_service, 'intent_classifier'):
+        nlp_status["intent"] = bool(ai_chatbot_service.intent_classifier)
+    if hasattr(ai_chatbot_service, 'embeddings'):
+        nlp_status["embeddings"] = bool(ai_chatbot_service.embeddings)
+    
+    if hasattr(ai_chatbot_service, 'chroma_client'):
+        vector_status["chroma"] = bool(ai_chatbot_service.chroma_client)
+    if hasattr(ai_chatbot_service, 'knowledge_collection'):
+        vector_status["knowledge_loaded"] = bool(ai_chatbot_service.knowledge_collection)
+    
+    response = {
         "status": "healthy",
-        "nlp_models": {
-            "spacy": bool(ai_chatbot_service.nlp),
-            "sentiment": bool(ai_chatbot_service.sentiment_analyzer),
-            "intent": bool(ai_chatbot_service.intent_classifier),
-            "embeddings": bool(ai_chatbot_service.embeddings)
-        },
-        "vector_stores": {
-            "chroma": bool(ai_chatbot_service.chroma_client),
-            "knowledge_loaded": bool(ai_chatbot_service.knowledge_collection)
-        },
-        "llm_providers": list(ai_chatbot_service.llm_providers.keys()),
-        "active_sessions": len(ai_chatbot_service.conversations)
+        "nlp_models": nlp_status,
+        "vector_stores": vector_status
     }
+    
+    if hasattr(ai_chatbot_service, 'llm_providers'):
+        response["llm_providers"] = list(ai_chatbot_service.llm_providers.keys())
+    
+    if hasattr(ai_chatbot_service, 'conversations'):
+        response["active_sessions"] = len(ai_chatbot_service.conversations)
+    
+    return response

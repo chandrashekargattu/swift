@@ -206,7 +206,14 @@ export default function AdvancedChatbot() {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isTyping) return;
+    console.log('[Chatbot Debug] handleSendMessage called');
+    console.log('[Chatbot Debug] Input value:', inputValue);
+    console.log('[Chatbot Debug] Is typing:', isTyping);
+    
+    if (!inputValue.trim() || isTyping) {
+      console.log('[Chatbot Debug] Message blocked - empty or typing');
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -215,6 +222,7 @@ export default function AdvancedChatbot() {
       timestamp: new Date()
     };
 
+    console.log('[Chatbot Debug] Adding user message:', userMessage);
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
@@ -229,15 +237,26 @@ export default function AdvancedChatbot() {
           llm_provider: selectedProvider
         }));
       } else {
-        // REST API call
-        const response = await apiClient.post('/api/v1/chatbot/chat', {
+        // REST API call - use public endpoint if not authenticated
+        const endpoint = user ? '/api/v1/chatbot/chat' : '/api/v1/chatbot/chat/public';
+        const payload = user ? {
           message: userMessage.content,
           context: {
-            user_id: user?.id,
+            user_id: user.id,
             session_id: sessionId
           },
           llm_provider: selectedProvider
-        });
+        } : {
+          message: userMessage.content,
+          session_id: sessionId
+        };
+
+        console.log('[Chatbot Debug] Sending to endpoint:', endpoint);
+        console.log('[Chatbot Debug] Payload:', payload);
+        
+        const response = await apiClient.post(endpoint, payload);
+        
+        console.log('[Chatbot Debug] Response received:', response);
 
         const botMessage: Message = {
           id: Date.now().toString(),
@@ -247,6 +266,7 @@ export default function AdvancedChatbot() {
           metadata: response.metadata
         };
 
+        console.log('[Chatbot Debug] Bot message:', botMessage);
         setMessages(prev => [...prev, botMessage]);
         setIsTyping(false);
 
@@ -256,7 +276,11 @@ export default function AdvancedChatbot() {
         }
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('[Chatbot Debug] Error sending message:', error);
+      console.error('[Chatbot Debug] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
       setIsTyping(false);
       
       const errorMessage: Message = {
@@ -289,8 +313,12 @@ export default function AdvancedChatbot() {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    console.log('[Chatbot Debug] Suggestion clicked:', suggestion);
     setInputValue(suggestion);
-    setTimeout(() => handleSendMessage(), 100);
+    setTimeout(() => {
+      console.log('[Chatbot Debug] Sending message after suggestion click');
+      handleSendMessage();
+    }, 100);
   };
 
   const handleVoiceInput = () => {

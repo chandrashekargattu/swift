@@ -1,11 +1,31 @@
 import math
-from typing import Dict
+from typing import Dict, Optional, Tuple
+from app.services.geo import geo_service
+
+
+async def calculate_distance_between_cities(
+    origin_city: str, 
+    destination_city: str,
+    use_driving_route: bool = True
+) -> float:
+    """
+    Calculate distance between two cities using the geo service.
+    Returns driving distance in kilometers.
+    """
+    try:
+        route_info = await geo_service.calculate_route_info(origin_city, destination_city)
+        return route_info["driving_distance_km"]
+    except Exception:
+        # Fallback to a default multiplier if geo service fails
+        # This would use the old haversine calculation as backup
+        return None
 
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate distance between two coordinates using Haversine formula.
     Returns distance in kilometers.
+    This is kept as a fallback for when geo service is not available.
     """
     R = 6371  # Earth's radius in kilometers
     
@@ -21,7 +41,8 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     distance = R * c
     
-    return round(distance, 2)
+    # Apply typical road distance multiplier (1.3x straight line)
+    return round(distance * 1.3, 2)
 
 
 def calculate_fare(

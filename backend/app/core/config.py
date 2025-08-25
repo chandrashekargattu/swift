@@ -63,6 +63,32 @@ class Settings(BaseSettings):
     # Google Maps
     GOOGLE_MAPS_API_KEY: str = ""
     
+    # Social Media OAuth Configuration
+    # Google OAuth
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_OAUTH_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
+    
+    # Facebook OAuth
+    FACEBOOK_APP_ID: str = ""
+    FACEBOOK_APP_SECRET: str = ""
+    FACEBOOK_OAUTH_REDIRECT_URI: str = "http://localhost:3000/auth/facebook/callback"
+    
+    # Instagram OAuth (uses Facebook Graph API)
+    INSTAGRAM_APP_ID: str = ""
+    INSTAGRAM_APP_SECRET: str = ""
+    INSTAGRAM_OAUTH_REDIRECT_URI: str = "http://localhost:3000/auth/instagram/callback"
+    
+    # Twitter/X OAuth
+    TWITTER_API_KEY: str = ""
+    TWITTER_API_SECRET: str = ""
+    TWITTER_OAUTH_REDIRECT_URI: str = "http://localhost:3000/auth/twitter/callback"
+    
+    # LinkedIn OAuth
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
+    LINKEDIN_OAUTH_REDIRECT_URI: str = "http://localhost:3000/auth/linkedin/callback"
+    
     class Config:
         case_sensitive = True
         env_file = ".env"

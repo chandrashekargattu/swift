@@ -48,8 +48,8 @@ class PyObjectId(ObjectId):
 class UserModel(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     email: EmailStr
-    full_name: str
-    phone_number: str
+    full_name: str = Field(alias="name")
+    phone_number: str = Field(default="", alias="phone")
     password_hash: str
     is_active: bool = True
     is_verified: bool = False
@@ -76,6 +76,9 @@ class UserModel(BaseModel):
     # Booking history
     total_bookings: int = 0
     total_spent: float = 0.0
+    
+    # OAuth providers
+    oauth_providers: dict = Field(default_factory=dict)  # {provider: {id, access_token, refresh_token, connected_at}}
     
     class Config:
         populate_by_name = True

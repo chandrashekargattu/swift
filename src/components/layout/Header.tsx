@@ -68,8 +68,20 @@ export default function Header() {
             <Link href="/pricing" className={`transition-colors ${isActive('/pricing') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
               Pricing
             </Link>
+            <Link href="/medicab" className={`transition-colors ${isActive('/medicab') ? 'text-red-600 font-semibold' : 'text-red-500 hover:text-red-600'} flex items-center gap-1`}>
+              <span className="animate-pulse">🚨</span> MediCab
+            </Link>
+            <Link href="/cashcab" className={`transition-colors ${isActive('/cashcab') ? 'text-green-600 font-semibold' : 'text-green-500 hover:text-green-600'} flex items-center gap-1`}>
+              <span>💰</span> CashCab
+            </Link>
+            <Link href="/distance-calculator" className={`transition-colors ${isActive('/distance-calculator') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
+              Distance
+            </Link>
             <Link href="/about" className={`transition-colors ${isActive('/about') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
               About
+            </Link>
+            <Link href="/social" className={`transition-colors ${isActive('/social') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
+              Social
             </Link>
             <Link href="/contact" className={`transition-colors ${isActive('/contact') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
               Contact
@@ -81,10 +93,7 @@ export default function Header() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <a href="tel:+918143243584" className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
-              <Phone className="w-4 h-4" />
-              <span>+91 8143243584</span>
-            </a>
+            {/* Phone number removed for cleaner UI */}
             {isLoading ? (
               <div className="animate-pulse bg-gray-200 h-10 w-24 rounded-lg"></div>
             ) : user ? (
@@ -174,8 +183,14 @@ export default function Header() {
               <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/pricing') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
                 Pricing
               </Link>
+              <Link href="/distance-calculator" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/distance-calculator') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
+                Distance
+              </Link>
               <Link href="/about" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/about') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
                 About
+              </Link>
+              <Link href="/social" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/social') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
+                Social
               </Link>
               <Link href="/contact" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/contact') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
                 Contact
@@ -183,10 +198,7 @@ export default function Header() {
               <Link href="/privacy" onClick={() => setIsMenuOpen(false)} className={`transition-colors ${isActive('/privacy') ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-blue-600'}`}>
                 Privacy
               </Link>
-              <a href="tel:+918143243584" className="flex items-center space-x-2 text-gray-700">
-                <Phone className="w-4 h-4" />
-                <span>+91 8143243584</span>
-              </a>
+              {/* Phone number removed for cleaner UI */}
               {user ? (
                 <>
                   <div className="border-t pt-4 mt-4">

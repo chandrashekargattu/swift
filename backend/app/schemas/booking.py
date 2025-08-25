@@ -113,6 +113,9 @@ class FareCalculationRequest(BaseModel):
     drop_location: LocationPoint
     cab_type: str
     trip_type: str = "one-way"
+    # Optional city names for dynamic distance calculation
+    pickup_city: Optional[str] = None
+    drop_city: Optional[str] = None
     
     @validator('cab_type')
     def validate_cab_type(cls, v):

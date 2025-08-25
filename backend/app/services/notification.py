@@ -1,10 +1,32 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 import logging
 from app.models.booking import BookingModel
 from app.models.user import UserModel
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class NotificationService:
+    """Service for handling various types of notifications"""
+    
+    async def send_email(self, to_email: str, subject: str, body: str):
+        """Send email notification"""
+        await send_email(to_email, subject, body)
+    
+    async def send_sms(self, to_phone: str, message: str):
+        """Send SMS notification"""
+        await send_sms(to_phone, message)
+    
+    async def send_push_notification(self, user_id: str, title: str, body: str, data: Optional[Dict[str, Any]] = None):
+        """Send push notification"""
+        await send_push_notification(user_id, title, body, data)
+    
+    async def broadcast_to_medical_team(self, data: Dict[str, Any]):
+        """Broadcast to medical response team dashboard"""
+        # In production, this would use WebSocket or real-time messaging
+        logger.info(f"Broadcasting to medical team: {data}")
+        # Example: await websocket_manager.broadcast_to_group("medical_team", data)
 
 
 async def send_booking_confirmation(booking: BookingModel):

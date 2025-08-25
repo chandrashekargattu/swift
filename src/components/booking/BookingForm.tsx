@@ -11,6 +11,7 @@ import { cabTypes } from '@/data/cabs';
 import { calculateDistance, formatDistance, formatDuration } from '@/lib/utils';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { geoService } from '@/services/geo';
 import LocationPicker from './LocationPicker';
 import CabSelector from './CabSelector';
 import PriceSummary from './PriceSummary';
@@ -50,19 +51,33 @@ export default function BookingForm() {
     }
   }, []);
 
-  const updateBooking = (updates: Partial<BookingDetails>) => {
+  const updateBooking = async (updates: Partial<BookingDetails>) => {
     setBooking(prev => {
       const updated = { ...prev, ...updates };
       
       // Calculate distance if both locations are selected
       if (updated.from && updated.to) {
-        const distance = calculateDistance(
+        // First use the static calculation as immediate feedback
+        const staticDistance = calculateDistance(
           updated.from.lat, 
           updated.from.lng, 
           updated.to.lat, 
           updated.to.lng
         );
-        updated.distance = distance;
+        updated.distance = staticDistance;
+        
+        // Then fetch dynamic distance asynchronously
+        geoService.getRouteInfo(updated.from.name, updated.to.name)
+          .then(routeInfo => {
+            setBooking(prev => ({
+              ...prev,
+              distance: routeInfo.driving_distance_km
+            }));
+          })
+          .catch(error => {
+            console.error('Failed to get dynamic distance:', error);
+            // Keep the static distance on error
+          });
       }
       
       return updated;

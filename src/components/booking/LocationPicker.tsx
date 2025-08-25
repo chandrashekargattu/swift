@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, X } from 'lucide-react';
 import { Location } from '@/types';
 import { searchLocations, popularLocations } from '@/data/locations';
+import { geoService, City } from '@/services/geo';
 
 interface LocationPickerProps {
   label: string;
@@ -24,16 +25,71 @@ export default function LocationPicker({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
+  const [dynamicCities, setDynamicCities] = useState<City[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Fetch cities from API
+  useEffect(() => {
+    const fetchCities = async () => {
+      setIsLoading(true);
+      try {
+        const cities = await geoService.fetchCities();
+        setDynamicCities(cities);
+      } catch (error) {
+        console.error('Failed to fetch cities:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCities();
+  }, []);
+
   useEffect(() => {
     if (search.length > 0) {
-      setFilteredLocations(searchLocations(search));
+      // Search from dynamic cities if available
+      if (dynamicCities.length > 0) {
+        const filtered = dynamicCities
+          .filter(city => 
+            city.name.toLowerCase().includes(search.toLowerCase()) ||
+            city.state.toLowerCase().includes(search.toLowerCase())
+          )
+          .map(city => ({
+            id: city.id,
+            name: city.name,
+            state: city.state,
+            popular: city.is_popular,
+            lat: city.latitude,
+            lng: city.longitude
+          }));
+        setFilteredLocations(filtered);
+      } else {
+        // Fallback to static search
+        setFilteredLocations(searchLocations(search));
+      }
     } else {
-      setFilteredLocations(popularLocations.filter(loc => loc.popular).slice(0, 8));
+      // Show popular cities
+      if (dynamicCities.length > 0) {
+        const popularCities = dynamicCities
+          .filter(city => city.is_popular)
+          .slice(0, 8)
+          .map(city => ({
+            id: city.id,
+            name: city.name,
+            state: city.state,
+            popular: city.is_popular,
+            lat: city.latitude,
+            lng: city.longitude
+          }));
+        setFilteredLocations(popularCities);
+      } else {
+        // Fallback to static popular locations
+        setFilteredLocations(popularLocations.filter(loc => loc.popular).slice(0, 8));
+      }
     }
-  }, [search]);
+  }, [search, dynamicCities]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

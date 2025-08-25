@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chatbot UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-area {
+            margin: 20px 0;
+        }
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background: #6B46C1;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #553C9A;
+        }
+        .response {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .suggestions {
+            margin-top: 10px;
+        }
+        .suggestion-btn {
+            background: #EDE9FE;
+            color: #6B46C1;
+            margin: 5px;
+            font-size: 12px;
+            padding: 8px 16px;
+        }
+        .suggestion-btn:hover {
+            background: #DDD6FE;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        #log {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interstate Cab Booking - Chatbot Test</h1>
+        
+        <div class="test-area">
+            <h3>Quick Actions (Test Buttons)</h3>
+            <div class="quick-buttons">
+                <button onclick="sendMessage('Book a ride from Hyderabad to Bangalore')">Book Ride</button>
+                <button onclick="sendMessage('What are your prices?')">Pricing</button>
+                <button onclick="sendMessage('Track my booking')">Track</button>
+                <button onclick="sendMessage('Calculate fare')">Calculate Fare</button>
+                <button onclick="sendMessage('Show me discounts')">Discounts</button>
+                <button onclick="sendMessage('Compare vehicles')">Compare Vehicles</button>
+            </div>
+        </div>
+
+        <div class="test-area">
+            <h3>Custom Message</h3>
+            <input type="text" id="customMessage" placeholder="Type a message..." style="width: 70%; padding: 10px;">
+            <button onclick="sendCustomMessage()">Send</button>
+        </div>
+
+        <div id="response" class="response" style="display: none;">
+            <h4>Response:</h4>
+            <div id="responseText"></div>
+            <div id="suggestions" class="suggestions"></div>
+        </div>
+
+        <div id="log">
+            <strong>Debug Log:</strong>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/v1/chatbot/chat/public';
+        let sessionId = `test_${Date.now()}`;
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function sendMessage(message) {
+            addLog(`Sending message: "${message}"`, 'info');
+            
+            const responseDiv = document.getElementById('response');
+            const responseText = document.getElementById('responseText');
+            const suggestionsDiv = document.getElementById('suggestions');
+            
+            responseDiv.style.display = 'block';
+            responseText.innerHTML = '<span class="loading">Loading...</span>';
+            suggestionsDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+
+                addLog(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addLog('Response received successfully', 'success');
+                    
+                    // Display response
+                    responseText.textContent = data.response;
+                    
+                    // Display suggestions if available
+                    if (data.metadata && data.metadata.suggestions) {
+                        addLog(`Suggestions: ${data.metadata.suggestions.join(', ')}`, 'info');
+                        
+                        suggestionsDiv.innerHTML = '<strong>Suggestions:</strong><br>';
+                        data.metadata.suggestions.forEach(suggestion => {
+                            const btn = document.createElement('button');
+                            btn.className = 'suggestion-btn';
+                            btn.textContent = suggestion;
+                            btn.onclick = () => {
+                                addLog(`Clicked suggestion: "${suggestion}"`, 'info');
+                                sendMessage(suggestion);
+                            };
+                            suggestionsDiv.appendChild(btn);
+                        });
+                    }
+                    
+                    // Log metadata
+                    if (data.metadata) {
+                        addLog(`Intent: ${data.metadata.intent || 'N/A'}, Confidence: ${(data.metadata.confidence || 0) * 100}%`, 'info');
+                    }
+                } else {
+                    addLog(`Error: ${data.error?.message || 'Unknown error'}`, 'error');
+                    responseText.innerHTML = `<span class="error">Error: ${data.error?.message || 'Unknown error'}</span>`;
+                }
+            } catch (error) {
+                addLog(`Network error: ${error.message}`, 'error');
+                responseText.innerHTML = `<span class="error">Network error: ${error.message}</span>`;
+            }
+        }
+
+        function sendCustomMessage() {
+            const input = document.getElementById('customMessage');
+            const message = input.value.trim();
+            if (message) {
+                sendMessage(message);
+                input.value = '';
+            }
+        }
+
+        // Allow Enter key to send custom message
+        document.getElementById('customMessage').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendCustomMessage();
+            }
+        });
+
+        // Initial log
+        addLog('Chatbot test UI loaded', 'success');
+        addLog(`Session ID: ${sessionId}`, 'info');
+    </script>
+</body>
+</html>

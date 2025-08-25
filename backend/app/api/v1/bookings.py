@@ -16,8 +16,9 @@ from app.schemas.booking import (
     FareCalculationResponse,
     BookingStatusUpdate
 )
-from app.services.pricing import calculate_fare, calculate_distance
+from app.services.pricing import calculate_fare, calculate_distance, calculate_distance_between_cities
 from app.services.notification import send_booking_confirmation
+from app.services.geo import geo_service
 from bson import ObjectId
 import logging
 
@@ -288,13 +289,25 @@ async def rate_booking(
 @router.post("/calculate-fare", response_model=FareCalculationResponse)
 async def calculate_booking_fare(fare_request: FareCalculationRequest):
     """Calculate fare for a trip."""
-    # Calculate distance
-    distance = calculate_distance(
-        fare_request.pickup_location.lat,
-        fare_request.pickup_location.lng,
-        fare_request.drop_location.lat,
-        fare_request.drop_location.lng
-    )
+    # First try to use city names if provided
+    distance = None
+    
+    # Check if pickup and drop locations are city names
+    if hasattr(fare_request, 'pickup_city') and hasattr(fare_request, 'drop_city'):
+        # Use city-based distance calculation
+        distance = await calculate_distance_between_cities(
+            fare_request.pickup_city,
+            fare_request.drop_city
+        )
+    
+    # Fallback to coordinate-based calculation
+    if distance is None:
+        distance = calculate_distance(
+            fare_request.pickup_location.lat,
+            fare_request.pickup_location.lng,
+            fare_request.drop_location.lat,
+            fare_request.drop_location.lng
+        )
     
     # Get cab type details
     cab_types = {

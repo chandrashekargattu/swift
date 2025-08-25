@@ -393,3 +393,4 @@ class SubscriptionService:
 
 # Create singleton instance
 subscription_service = SubscriptionService()
+

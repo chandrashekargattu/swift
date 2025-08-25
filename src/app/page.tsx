@@ -1,13 +1,20 @@
 'use client';
 
-import { Shield, Clock, CreditCard, HeadphonesIcon, MapPin, Star, Users, Car, Phone, ChevronRight, CheckCircle, DollarSign, ArrowRight } from 'lucide-react';
+import { Shield, Clock, CreditCard, HeadphonesIcon, MapPin, Star, Users, Car, Phone, ChevronRight, CheckCircle, DollarSign, ArrowRight, Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useState } from 'react';
 import { popularLocations } from '@/data/locations';
 import { cabTypes as cabs } from '@/data/cabs';
 import BookingForm from '@/components/booking/BookingForm';
+import dynamic from 'next/dynamic';
+
+// Dynamically import VoiceBooking to avoid SSR issues
+const VoiceBooking = dynamic(() => import('@/components/voice/VoiceBooking'), { ssr: false });
 
 export default function Home() {
+  const [showVoiceBooking, setShowVoiceBooking] = useState(false);
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -58,10 +65,10 @@ export default function Home() {
                     <span>Book Your Ride</span>
                     <ChevronRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
                   </Link>
-                  <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all flex items-center justify-center space-x-2">
+                  <Link href="/help" className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all flex items-center justify-center space-x-2">
                     <Phone className="w-5 h-5" />
-                    <span>+91 8143243584</span>
-                  </button>
+                    <span>Get Help</span>
+                  </Link>
                 </div>
 
                 {/* Features Grid */}
@@ -365,12 +372,54 @@ export default function Home() {
               <span>Book Now</span>
               <ChevronRight className="w-5 h-5" />
             </Link>
+            <button 
+              onClick={() => setShowVoiceBooking(true)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-lg hover:shadow-lg transition-all inline-flex items-center space-x-2"
+            >
+              <Mic className="w-5 h-5" />
+              <span>Book with Voice</span>
+            </button>
             <Link href="/contact" className="border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-white hover:text-blue-600 transition-all">
               Contact Us
             </Link>
           </div>
         </div>
       </section>
+
+      {/* Voice Booking Modal */}
+      {showVoiceBooking && (
+        <VoiceBooking 
+          onClose={() => setShowVoiceBooking(false)}
+          onBookingComplete={(bookingId) => {
+            setShowVoiceBooking(false);
+            // Navigate to booking details or show success
+            window.location.href = `/bookings/${bookingId}`;
+          }}
+        />
+      )}
+
+      {/* Floating Voice Assistant Button - Positioned above AI Chatbot */}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="fixed bottom-24 right-6 z-40"
+      >
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setShowVoiceBooking(true)}
+          className="w-14 h-14 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-2xl flex items-center justify-center hover:shadow-purple-500/50 transition-all group relative"
+          aria-label="Voice Booking Assistant"
+        >
+          <Mic className="w-7 h-7 text-white" />
+          {/* Pulse animation */}
+          <span className="absolute inset-0 rounded-full bg-purple-400 opacity-75 animate-ping" />
+          {/* Tooltip */}
+          <span className="absolute -left-28 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+            Voice Booking
+          </span>
+        </motion.button>
+      </motion.div>
     </main>
   );
 }

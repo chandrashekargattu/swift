@@ -264,3 +264,4 @@ class TravelCompanionService:
 
 # Create singleton instance
 travel_companion_service = TravelCompanionService()
+

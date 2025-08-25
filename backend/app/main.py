@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection, get_database
 from app.core.logging import setup_logging, get_logger, LoggingMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
-from app.api.v1 import auth, bookings, users
+from app.api.v1 import api_router
 
 # Setup logging
 setup_logging(
@@ -40,6 +40,17 @@ async def lifespan(app: FastAPI):
         startup_time = time.time() - start_time
         logger.info(f"Database connection established in {startup_time:.2f}s")
         logger.log_metric("startup_time", startup_time, component="database")
+        
+        # Seed cities if collection is empty
+        from app.services.geo import geo_service
+        cities_count = await geo_service.cities_collection.count_documents({})
+        if cities_count == 0:
+            logger.info("No cities found, seeding initial data...")
+            result = await geo_service.seed_initial_cities()
+            logger.info(result)
+        else:
+            logger.info(f"Found {cities_count} cities in database")
+            
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}", exc_info=True)
         raise
@@ -148,13 +159,15 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(LoggingMiddleware, logger=logger)
 
 # Rate Limiting Middleware
-app.add_middleware(
-    RateLimitMiddleware,
-    requests_per_minute=300,  # Increased for development
-    requests_per_hour=10000,  # Increased for development
-    burst_size=50,  # Increased for development
-    exclude_paths=["/health", "/metrics", "/docs", "/redoc", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/register"]
-)
+# Add rate limiting (disabled for development)
+if settings.ENVIRONMENT == "production":
+    app.add_middleware(
+        RateLimitMiddleware,
+        requests_per_minute=300,
+        requests_per_hour=10000,
+        burst_size=50,
+        exclude_paths=["/health", "/metrics", "/docs", "/redoc", "/openapi.json", "/api/v1/auth/login", "/api/v1/auth/register"]
+    )
 
 # CORS Middleware
 cors_origins = []
@@ -192,23 +205,10 @@ async def add_request_id(request: Request, call_next: Callable):
     return response
 
 
-# Include routers
+# Include all API v1 routes
 app.include_router(
-    auth.router,
-    prefix=f"{settings.API_PREFIX}/auth",
-    tags=["Authentication"]
-)
-
-app.include_router(
-    bookings.router,
-    prefix=f"{settings.API_PREFIX}/bookings",
-    tags=["Bookings"]
-)
-
-app.include_router(
-    users.router,
-    prefix=f"{settings.API_PREFIX}/users",
-    tags=["Users"]
+    api_router,
+    prefix=settings.API_PREFIX
 )
 
 # API v2 placeholder (for future versions)

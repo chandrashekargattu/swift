@@ -361,3 +361,4 @@ class SocialCarpoolService:
 
 # Create singleton instance
 social_carpool_service = SocialCarpoolService()
+

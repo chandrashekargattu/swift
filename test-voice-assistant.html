@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .transcript {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e8f4fd;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        .intent {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e8fde8;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voice Assistant Test</h1>
+        
+        <button id="startBtn" onclick="startListening()">Start Listening</button>
+        <button id="stopBtn" onclick="stopListening()" disabled>Stop Listening</button>
+        
+        <div class="status" id="status">Ready</div>
+        
+        <div class="transcript">
+            <strong>You said:</strong>
+            <div id="transcript"></div>
+        </div>
+        
+        <div class="intent">
+            <strong>AI Response:</strong>
+            <div id="intent"></div>
+        </div>
+
+        <h3>Test Commands:</h3>
+        <ul>
+            <li>"Office please"</li>
+            <li>"Airport"</li>
+            <li>"Take me home"</li>
+            <li>"Book a cab to the mall"</li>
+        </ul>
+    </div>
+
+    <script>
+        let recognition;
+        let bookingIntent = {};
+
+        // Initialize speech recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                document.getElementById('status').textContent = 'Listening...';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+            };
+
+            recognition.onend = () => {
+                document.getElementById('status').textContent = 'Stopped';
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+            };
+
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                if (finalTranscript) {
+                    document.getElementById('transcript').textContent = finalTranscript;
+                    processCommand(finalTranscript.trim());
+                } else {
+                    document.getElementById('transcript').textContent = interimTranscript;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                document.getElementById('status').textContent = 'Error: ' + event.error;
+            };
+        } else {
+            document.getElementById('status').textContent = 'Speech recognition not supported';
+        }
+
+        function startListening() {
+            if (recognition) {
+                recognition.start();
+                speak("Hi! Where would you like to go?");
+            }
+        }
+
+        function stopListening() {
+            if (recognition) {
+                recognition.stop();
+            }
+        }
+
+        function processCommand(command) {
+            console.log('Processing command:', command);
+            const intent = extractIntent(command);
+            console.log('Extracted intent:', intent);
+            
+            // Update UI
+            const response = generateResponse(intent);
+            document.getElementById('intent').innerHTML = `
+                <strong>Intent:</strong> ${JSON.stringify(intent.intent, null, 2)}<br>
+                <strong>Response:</strong> ${response}<br>
+                <strong>Missing:</strong> ${intent.missingInfo.join(', ') || 'None'}
+            `;
+            
+            // Speak response
+            speak(response);
+            
+            // Update booking intent
+            Object.assign(bookingIntent, intent.intent);
+        }
+
+        function extractIntent(command) {
+            const lowerCommand = command.toLowerCase().trim();
+            // Build on existing booking intent
+            const intent = {...bookingIntent};
+            
+            // Check for confirmation
+            if (lowerCommand === 'yes' || lowerCommand === 'confirm' || lowerCommand === 'book it' || lowerCommand === 'ok' || lowerCommand === 'yeah') {
+                if (intent.pickup && intent.dropoff) {
+                    return { 
+                        intent, 
+                        missingInfo: [],
+                        action: 'booking_complete'
+                    };
+                }
+            }
+            
+            // Check for cancellation
+            if (lowerCommand === 'no' || lowerCommand === 'cancel' || lowerCommand === 'stop') {
+                bookingIntent = {};
+                return { 
+                    intent: {}, 
+                    missingInfo: ['pickup', 'dropoff'],
+                    action: 'cancelled'
+                };
+            }
+            
+            // Common destinations
+            const destinationMap = {
+                'airport': 'Airport',
+                'office': 'Office',
+                'home': 'Home',
+                'railway': 'Railway Station',
+                'station': 'Railway Station',
+                'mall': 'Mall',
+                'hospital': 'Hospital',
+                'hotel': 'Hotel',
+                'my home': 'Home',
+                'my office': 'Office',
+                'the airport': 'Airport'
+            };
+            
+            // Check if this is answering "from where?" question
+            if (!intent.pickup && intent.dropoff) {
+                // We're expecting a pickup location
+                for (const [key, value] of Object.entries(destinationMap)) {
+                    if (lowerCommand.includes(key)) {
+                        intent.pickup = value;
+                        break;
+                    }
+                }
+            }
+            // Check if this is answering "where to?" question  
+            else if (intent.pickup && !intent.dropoff) {
+                // We're expecting a dropoff location
+                for (const [key, value] of Object.entries(destinationMap)) {
+                    if (lowerCommand.includes(key)) {
+                        intent.dropoff = value;
+                        break;
+                    }
+                }
+            }
+            // Otherwise, try to extract both
+            else {
+                // Check for destinations
+                for (const [key, value] of Object.entries(destinationMap)) {
+                    if (lowerCommand.includes(key)) {
+                        intent.dropoff = value;
+                        break;
+                    }
+                }
+                
+                // Check for pickup
+                if (lowerCommand.includes('from')) {
+                    const fromIndex = lowerCommand.indexOf('from');
+                    const afterFrom = lowerCommand.substring(fromIndex + 5).trim();
+                    for (const [key, value] of Object.entries(destinationMap)) {
+                        if (afterFrom.includes(key)) {
+                            intent.pickup = value;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Default cab type
+            intent.cabType = intent.cabType || 'sedan';
+            
+            // Check what's missing
+            const missingInfo = [];
+            if (!intent.pickup && !intent.dropoff) {
+                missingInfo.push('pickup', 'dropoff');
+            } else if (!intent.pickup) {
+                missingInfo.push('pickup');
+            } else if (!intent.dropoff) {
+                missingInfo.push('dropoff');
+            }
+            
+            console.log('Updated intent:', intent);
+            console.log('Missing info:', missingInfo);
+            
+            return { intent, missingInfo };
+        }
+
+        function generateResponse(intentData) {
+            const { intent, missingInfo } = intentData;
+            
+            if (missingInfo.length === 0) {
+                return `Book ${intent.cabType} from ${intent.pickup} to ${intent.dropoff}?`;
+            } else if (missingInfo.length === 2) {
+                return 'Where from?';
+            } else if (missingInfo.includes('pickup')) {
+                return `To ${intent.dropoff}. From where?`;
+            } else {
+                return `From ${intent.pickup}. Where to?`;
+            }
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.2;
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        .test-case {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .user-says {
+            background: #e3f2fd;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin: 5px 0;
+            display: inline-block;
+        }
+        .ai-responds {
+            background: #f3e5f5;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin: 5px 0;
+            display: inline-block;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin: 4px 0;
+        }
+        .log-voice {
+            color: #4fc3f7;
+        }
+        .log-intent {
+            color: #81c784;
+        }
+        .log-error {
+            color: #e57373;
+        }
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .test-button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .tips {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .tips h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            margin: 8px 0;
+            position: relative;
+            padding-left: 30px;
+        }
+        .checklist li:before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            font-size: 20px;
+        }
+        .checklist li.checked:before {
+            content: '☑';
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voice Assistant Test Interface</h1>
+        
+        <div class="tips">
+            <h3>⚡ Quick Tips</h3>
+            <ul>
+                <li>✅ Open browser console (F12) to see detailed logs</li>
+                <li>✅ Use Chrome or Edge browser for best results</li>
+                <li>✅ Speak clearly after the beep</li>
+                <li>✅ Allow microphone permissions when prompted</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 1: Basic Flow</h2>
+            <div class="test-case">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <div>
+                        <div>Click microphone and say:</div>
+                        <div class="user-says">Office please</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <div>
+                        <div>AI should respond:</div>
+                        <div class="ai-responds">To Office. From where?</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <div>
+                        <div>Say:</div>
+                        <div class="user-says">My home</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <div>
+                        <div>AI should respond:</div>
+                        <div class="ai-responds">Book sedan from Home to Office?</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <div>
+                        <div>Say:</div>
+                        <div class="user-says">Yes</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">6</span>
+                    <div>
+                        <div>AI should respond:</div>
+                        <div class="ai-responds">Done! Your sedan is booked. Driver arrives in 5 minutes.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 2: Custom Locations</h2>
+            <div class="test-case">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <div>
+                        <div>Say:</div>
+                        <div class="user-says">Take me to Starbucks on 5th street</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <div>
+                        <div>AI should respond:</div>
+                        <div class="ai-responds">To Starbucks On 5th Street. From where?</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <div>
+                        <div>Say:</div>
+                        <div class="user-says">123 Main Street apartment 4B</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <div>
+                        <div>AI should confirm with custom addresses</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Expected Console Output</h2>
+            <div class="console-output">
+                <div class="log-entry log-voice">[Voice] Processing command: office please</div>
+                <div class="log-entry log-voice">[Voice] Current booking intent before processing: {}</div>
+                <div class="log-entry log-intent">[Voice] Updated intent: {dropoff: 'Office', cabType: 'sedan'}</div>
+                <div class="log-entry log-voice">[Voice] Missing info: ['pickup']</div>
+                <div class="log-entry">---</div>
+                <div class="log-entry log-voice">[Voice] Processing command: my home</div>
+                <div class="log-entry log-voice">[Voice] Current booking intent: {dropoff: 'Office', cabType: 'sedan'}</div>
+                <div class="log-entry log-voice">[Voice] Looking for pickup location in: my home</div>
+                <div class="log-entry log-intent">[Voice] Found pickup match: my home -> Home</div>
+                <div class="log-entry log-intent">[Voice] Updated intent: {pickup: 'Home', dropoff: 'Office', cabType: 'sedan'}</div>
+                <div class="log-entry log-voice">[Voice] Missing info: []</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Test Checklist</h2>
+            <ul class="checklist">
+                <li onclick="this.classList.toggle('checked')">Basic flow works (Office → Home → Yes)</li>
+                <li onclick="this.classList.toggle('checked')">Custom locations accepted</li>
+                <li onclick="this.classList.toggle('checked')">No conversation loops</li>
+                <li onclick="this.classList.toggle('checked')">Context preserved between commands</li>
+                <li onclick="this.classList.toggle('checked')">Backend doesn't throw errors</li>
+                <li onclick="this.classList.toggle('checked')">Cancellation works (say "Cancel" or "No")</li>
+                <li onclick="this.classList.toggle('checked')">Complete command works ("Book cab from home to office")</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="test-button" onclick="window.open('http://localhost:3000', '_blank')">
+                Open App to Test 🚀
+            </button>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center; color: #666;">
+            <p>Click items in the checklist to mark them as complete</p>
+            <p style="margin-top: 10px;">🎉 Voice assistant is now fully functional and intelligent!</p>
+        </div>
+    </div>
+
+    <script>
+        console.log('%c🎤 Voice Assistant Test Interface Loaded', 'font-size: 20px; color: #667eea; font-weight: bold');
+        console.log('%cClick "Open App to Test" to start testing', 'font-size: 14px; color: #666');
+        
+        // Add click handlers to checklist items
+        document.querySelectorAll('.checklist li').forEach(item => {
+            item.style.cursor = 'pointer';
+        });
+    </script>
+</body>
+</html>

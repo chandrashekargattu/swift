@@ -55,6 +55,34 @@ async def get_current_active_user(current_user: UserModel = Depends(get_current_
     return current_user
 
 
+async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))) -> Optional[UserModel]:
+    """Get current user if authenticated, otherwise return None."""
+    if not credentials:
+        return None
+    
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        email: str = payload.get("sub")
+        user_id: str = payload.get("user_id")
+        
+        if not email or not user_id:
+            return None
+            
+        # Get user from database
+        user_dict = await users_collection().find_one({"_id": ObjectId(user_id)})
+        if not user_dict:
+            return None
+            
+        user = UserModel(**user_dict)
+        if not user.is_active:
+            return None
+            
+        return user
+    except (JWTError, Exception):
+        return None
+
+
 async def get_current_admin_user(current_user: UserModel = Depends(get_current_user)) -> UserModel:
     """Get current admin user."""
     if current_user.role != "admin":
